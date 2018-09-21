@@ -3,13 +3,16 @@ SOURCES =  \
   rebed.go \
   rebin/track.go
 
-.PHONY: clean test
+.PHONY: clean test depends
 
-rebed: $(SOURCES)
+rebed: $(SOURCES) depends
 	go build -o $@
 
 clean:
 	rm -f rebed
 
-test:
+test: depends
 	go test ./...
+
+depends:
+	go get ./...
