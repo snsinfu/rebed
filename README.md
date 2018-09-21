@@ -13,7 +13,7 @@ rebed loads a BedGraph file specified via command-line argument or standard
 input and outputs binned data to standard output. The bin size can be specified
 via an -b/--binsize option.
 
-The following example rebins input.bdg with 10000-bp bins:
+The following example rebins input.bdg with 1000-bp bins:
 
 ```console
 rebed -b 1000 input.bdg
