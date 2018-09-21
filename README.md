@@ -3,9 +3,26 @@ rebed
 
 rebed is a command-line utility for binning BedGraph data track.
 
+- [Installation](#installation)
 - [Usage](#usage)
 - [Testing](#testing)
 - [License](#license)
+
+## Installation
+
+For linux, download a single-binary release and put it in your bin directory:
+
+```console
+curl -Lo ~/bin/rebed https://github.com/snsinfu/rebed/releases/download/v0.1/rebed-linux-x86_64
+```
+
+Or build your own binary:
+
+```console
+go get https://github.com/snsinfu/rebed
+cd ${GOPATH}/src/github.com/snsinfu/rebed
+make
+```
 
 ## Usage
 
