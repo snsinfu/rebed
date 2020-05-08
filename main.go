@@ -16,6 +16,7 @@ Usage:
 
 Options:
   -b, --binsize <binsize>  Set bin size. [default: 1000]
+  -m, --mode <mode>        Set binning mode (mean or sum). [default: sum]
   -h, --help               Show this help message and exit.
 `
 
@@ -32,17 +33,39 @@ func run() error {
 		panic(err)
 	}
 
+	// Bin size
 	binSize, err := opts.Int("--binsize")
 	if err != nil {
 		return fmt.Errorf("bad bin size")
 	}
+
 	if binSize <= 0 {
 		return fmt.Errorf("bad bin size %d", binSize)
 	}
 
+	// Binning mode
+	modeName, err := opts.String("--mode")
+	if err != nil {
+		return err
+	}
+
+	var mode opMode
+	switch modeName {
+	case "sum":
+		mode = opModeSum
+
+	case "mean":
+		mode = opModeMean
+
+	default:
+		return fmt.Errorf("bad mode: %s", modeName)
+	}
+
+	// Inputs
 	inputs := opts["<input>"].([]string)
+
 	if len(inputs) == 0 {
-		if err := rebed(os.Stdin, os.Stdout, int64(binSize)); err != nil {
+		if err := rebed(os.Stdin, os.Stdout, int64(binSize), mode); err != nil {
 			return errors.Wrap(err, "processing stdin")
 		}
 	}
@@ -55,10 +78,10 @@ func run() error {
 			}
 			defer file.Close()
 
-			return rebed(file, os.Stdout, int64(binSize))
+			return rebed(file, os.Stdout, int64(binSize), mode)
 		}()
 		if err != nil {
-			return errors.Wrap(err, "processing file " + input)
+			return errors.Wrap(err, "processing file "+input)
 		}
 	}
 

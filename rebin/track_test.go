@@ -11,8 +11,8 @@ func TestNewTrack_createsEmptyTrack(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	track.GetBins(func(beg, end int64, val float64) {
-		t.Errorf("unexpected bin: (%d, %d, %g)", beg, end, val)
+	track.GetBins(func(beg, end int64, v float64, w float64) {
+		t.Errorf("unexpected bin: (%d, %d, %g, %g)", beg, end, v, w)
 	})
 }
 
@@ -34,13 +34,32 @@ func TestTrack_Put_GetBins(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	type bin struct {
+	type inputBin struct {
 		beg int64
 		end int64
 		val float64
 	}
 
-	input := []bin{
+	type outputBin struct {
+		beg    int64
+		end    int64
+		val    float64
+		weight float64
+	}
+
+	//              1    1
+	//    0    5    0    5
+	//    |----|----|----|
+	// I      ===== 1.0
+	// N  === 2.0
+	// P     ====== 3.0
+	// U    ==== 4.0
+	// T           === 5.0
+	//    |----|----|----|
+	// v  | 25 | 25 | 10 |
+	// w  |  9 | 10 |  2 |
+
+	input := []inputBin{
 		{4, 9, 1.0},
 		{0, 3, 2.0},
 		{3, 9, 3.0},
@@ -48,10 +67,10 @@ func TestTrack_Put_GetBins(t *testing.T) {
 		{9, 12, 5.0},
 	}
 
-	expected := []bin{
-		{0, 5, 5.0},
-		{5, 10, 5.0},
-		{10, 12, 5.0},
+	expected := []outputBin{
+		{0, 5, 25.0, 9.0},
+		{5, 10, 25.0, 10.0},
+		{10, 12, 10.0, 2.0},
 	}
 
 	for _, b := range input {
@@ -60,13 +79,14 @@ func TestTrack_Put_GetBins(t *testing.T) {
 		}
 	}
 
-	actual := []bin{}
+	actual := []outputBin{}
 
-	track.GetBins(func(beg, end int64, val float64) {
-		actual = append(actual, bin{
-			beg: beg,
-			end: end,
-			val: val,
+	track.GetBins(func(beg, end int64, v float64, w float64) {
+		actual = append(actual, outputBin{
+			beg:    beg,
+			end:    end,
+			val:    v,
+			weight: w,
 		})
 	})
 

@@ -11,9 +11,14 @@ var (
 
 // Track
 type Track struct {
-	bins    []float64
+	bins    []Bin
 	binSize int64
 	end     int64
+}
+
+type Bin struct {
+	value  float64
+	weight float64
 }
 
 // NewTrack creates an empty Track with given bin size. It fails if binSize is
@@ -26,7 +31,7 @@ func NewTrack(binSize int64) (*Track, error) {
 }
 
 // GetBins calls callback for all bins.
-func (t *Track) GetBins(callback func(int64, int64, float64)) {
+func (t *Track) GetBins(callback func(int64, int64, float64, float64)) {
 	for beg := int64(0); beg < t.end; beg += t.binSize {
 		end := beg + t.binSize
 		if end > t.end {
@@ -34,9 +39,7 @@ func (t *Track) GetBins(callback func(int64, int64, float64)) {
 		}
 
 		i := int(beg / t.binSize)
-		mean := t.bins[i] / float64(end-beg)
-
-		callback(beg, end, mean)
+		callback(beg, end, t.bins[i].value, t.bins[i].weight)
 	}
 }
 
@@ -49,7 +52,7 @@ func (t *Track) Put(beg, end int64, val float64) error {
 
 	bound := int((end + t.binSize - 1) / t.binSize)
 	if bound > len(t.bins) {
-		newBins := make([]float64, bound+len(t.bins))
+		newBins := make([]Bin, bound+len(t.bins))
 		copy(newBins, t.bins)
 		t.bins = newBins
 	}
@@ -63,7 +66,9 @@ func (t *Track) Put(beg, end int64, val float64) error {
 		}
 
 		i := int(b / t.binSize)
-		t.bins[i] += val * float64(e-b)
+		w := float64(e - b)
+		t.bins[i].value += val * w
+		t.bins[i].weight += w
 
 		b = e
 		e += t.binSize

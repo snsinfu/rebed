@@ -11,7 +11,25 @@ import (
 	"github.com/snsinfu/rebed/rebin"
 )
 
-func rebed(input io.Reader, output io.Writer, binSize int64) error {
+type opMode int
+
+const (
+	opModeSum opMode = iota
+	opModeMean
+)
+
+func summarize(beg, end int64, value, weight float64, mode opMode) float64 {
+	switch mode {
+	case opModeSum:
+		return value / float64(end-beg)
+
+	case opModeMean:
+		return value / weight
+	}
+	panic("unexpected mode")
+}
+
+func rebed(input io.Reader, output io.Writer, binSize int64, mode opMode) error {
 	track, err := rebin.NewTrack(binSize)
 	if err != nil {
 		return err
@@ -19,8 +37,9 @@ func rebed(input io.Reader, output io.Writer, binSize int64) error {
 
 	chrom := ""
 
-	printBin := func(beg, end int64, val float64) {
-		fmt.Fprintf(output, "%s\t%d\t%d\t%g\n", chrom, beg, end, val)
+	printBin := func(beg, end int64, value, weight float64) {
+		out := summarize(beg, end, value, weight, mode)
+		fmt.Fprintf(output, "%s\t%d\t%d\t%g\n", chrom, beg, end, out)
 	}
 
 	s := bufio.NewScanner(input)
