@@ -17,6 +17,7 @@ Usage:
 Options:
   -b, --binsize <binsize>  Set bin size. [default: 1000]
   -m, --mode <mode>        Set binning mode (mean or sum). [default: sum]
+  -g, --genome <genome>    Specify a text file containing chromosome sizes.
   -h, --help               Show this help message and exit.
 `
 
@@ -61,11 +62,21 @@ func run() error {
 		return fmt.Errorf("bad mode: %s", modeName)
 	}
 
+	// Chromosome definitions
+	chromSizes := map[string]int64{}
+
+	if chromFile, ok := opts["--genome"]; chromFile != nil && ok {
+		chromSizes, err = loadChromSizes(chromFile.(string))
+		if err != nil {
+			return err
+		}
+	}
+
 	// Inputs
 	inputs := opts["<input>"].([]string)
 
 	if len(inputs) == 0 {
-		if err := rebed(os.Stdin, os.Stdout, int64(binSize), mode); err != nil {
+		if err := rebed(os.Stdin, os.Stdout, int64(binSize), mode, chromSizes); err != nil {
 			return errors.Wrap(err, "processing stdin")
 		}
 	}
@@ -78,7 +89,7 @@ func run() error {
 			}
 			defer file.Close()
 
-			return rebed(file, os.Stdout, int64(binSize), mode)
+			return rebed(file, os.Stdout, int64(binSize), mode, chromSizes)
 		}()
 		if err != nil {
 			return errors.Wrap(err, "processing file "+input)

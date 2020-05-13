@@ -29,13 +29,14 @@ func summarize(beg, end int64, value, weight float64, mode opMode) float64 {
 	panic("unexpected mode")
 }
 
-func rebed(input io.Reader, output io.Writer, binSize int64, mode opMode) error {
+func rebed(input io.Reader, output io.Writer, binSize int64, mode opMode, chromSizes map[string]int64) error {
 	track, err := rebin.NewTrack(binSize)
 	if err != nil {
 		return err
 	}
 
 	chrom := ""
+	covered := false
 
 	printBin := func(beg, end int64, value, weight float64) {
 		out := summarize(beg, end, value, weight, mode)
@@ -55,6 +56,7 @@ func rebed(input io.Reader, output io.Writer, binSize int64, mode opMode) error 
 			track.GetBins(printBin)
 			track, _ = rebin.NewTrack(binSize)
 			chrom = fields[0]
+			covered = false
 		}
 
 		beg, err := strconv.ParseInt(fields[1], 10, 64)
@@ -73,6 +75,13 @@ func rebed(input io.Reader, output io.Writer, binSize int64, mode opMode) error 
 		}
 
 		track.Put(beg, end, val)
+
+		if !covered {
+			if size, ok := chromSizes[chrom]; ok {
+				track.Cover(0, size)
+			}
+			covered = true
+		}
 	}
 
 	if err := s.Err(); err != nil {
