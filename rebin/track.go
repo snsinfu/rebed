@@ -46,15 +46,8 @@ func (t *Track) GetBins(callback func(int64, int64, float64, float64)) {
 // Put accumulates value val over half-open interval [beg, end). It fails if
 // beg < 0 or beg > end.
 func (t *Track) Put(beg, end int64, val float64) error {
-	if beg < 0 || beg > end {
-		return errBadInterval
-	}
-
-	bound := int((end + t.binSize - 1) / t.binSize)
-	if bound > len(t.bins) {
-		newBins := make([]Bin, bound+len(t.bins))
-		copy(newBins, t.bins)
-		t.bins = newBins
+	if err := t.Cover(beg, end); err != nil {
+		return err
 	}
 
 	b := beg
@@ -72,6 +65,25 @@ func (t *Track) Put(beg, end int64, val float64) error {
 
 		b = e
 		e += t.binSize
+	}
+
+	return nil
+}
+
+// Cover ensures specified coordinate range [beg, end) to be covered by the
+// track by extending the end of the track if necessary. If you do not use
+// this function, Track defines its end as the highest end coordinate of
+// samples seen.
+func (t *Track) Cover(beg, end int64) error {
+	if beg < 0 || beg > end {
+		return errBadInterval
+	}
+
+	bound := int((end + t.binSize - 1) / t.binSize)
+	if bound > len(t.bins) {
+		newBins := make([]Bin, bound+len(t.bins))
+		copy(newBins, t.bins)
+		t.bins = newBins
 	}
 
 	if end > t.end {

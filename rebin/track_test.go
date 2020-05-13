@@ -115,3 +115,42 @@ func TestTrack_Put_detectsBadInterval(t *testing.T) {
 		t.Fatalf("unexpected success: track = %v", track)
 	}
 }
+
+func TestTrack_Cover_extendsTrack(t *testing.T) {
+	track, err := NewTrack(10)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	coverStart := int64(5)
+	coverEnd := int64(23)
+	if err := track.Cover(coverStart, coverEnd); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	trackEnd := int64(-1)
+	track.GetBins(func(beg, end int64, v float64, w float64) {
+		trackEnd = end
+	})
+
+	if trackEnd != coverEnd {
+		t.Errorf("unexpected track end: got %v, want %v", trackEnd, coverEnd)
+	}
+}
+
+func TestTrack_Cover_detectsBadInterval(t *testing.T) {
+	track, err := NewTrack(10)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Negative coord
+	if err := track.Cover(-1, 1); err == nil {
+		t.Fatalf("unexpected success: track = %v", track)
+	}
+
+	// Reversed order
+	if err := track.Cover(2, 1); err == nil {
+		t.Fatalf("unexpected success: track = %v", track)
+	}
+}
